@@ -36,8 +36,8 @@ constraint forall(v in Vehicles) (
 
 );
 constraint forall(c in Customers) (
-    sum(v in Vehicles) (bool2int(successor[v, c] != c)) == 1
-); 
+    sum(v in Vehicles) (bool2int(successor[v, c] == c)) == vehicount - 1
+);
 
 constraint forall(v in Vehicles) (
     load[v, depot] = 0
@@ -46,7 +46,7 @@ constraint forall(v in Vehicles) (
 constraint forall(v in Vehicles, i in Nodes) (
     let {var Nodes: j = successor[v,i]} in
     if i != j /\ j != depot then
-        arrival[v,j] >= arrival[v,i] + service[i] + dists[i,j]
+        arrival[v,j] >= arrival[v,i] + service[i]+ dists[i,j]
     else
         true
     endif
@@ -54,9 +54,10 @@ constraint forall(v in Vehicles, i in Nodes) (
 constraint forall (v in Vehicles, i in Nodes) (
     load[v,i] <= capacity
 );
-constraint forall(v in 1..vehicount-1) (
+/* constraint forall(v in 1..vehicount-1) (
     lex_lesseq(row(successor, v), row(successor, v+1))
-); 
+);  removed but mantained just in case*/
+
 constraint forall(v in Vehicles, i in Nodes) (
     let {var Nodes: j = successor[v,i]} in
     if j != i then
@@ -68,19 +69,24 @@ constraint forall(v in Vehicles, i in Nodes) (
 constraint forall(v in Vehicles, i in Nodes) (
     arrival[v, i] >= ready[i] /\ arrival[v, i] <= due[i]
 );
+
 constraint forall(v in 1..vehicount-1) (
     (successor[v, depot] == depot) -> (successor[v+1, depot] == depot)
 );
 constraint forall(v in Vehicles) (
     (successor[v, depot] == depot) -> forall(c in Customers) (successor[v, c] == c)
 );
+constraint forall(v in Vehicles, i in Nodes, j in Customers where i != j) (
+    if ready[i] + service[i] + dists[i,j] > due[j] then
+        successor[v,i] != j
+    else
+        true
+    endif
+);
+
 var int: vehicle_penalty = sum(v in Vehicles) (
-    bool2int(successor[v, depot] != depot) * 100000
+    bool2int(successor[v, depot] != depot) * 20000
 );
 var int: score = sum(v in Vehicles, i in Nodes) (
     dists[i, successor[v,i]]
 ) + vehicle_penalty;
-
-solve :: int_search(array1d(successor), first_fail, indomain_min)
-      :: restart_constant(100) 
-      minimize score;
