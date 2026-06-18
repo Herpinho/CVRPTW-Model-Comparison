@@ -144,16 +144,9 @@ def solve_cvrptw(
     print(f"  [Formulação] Arcos feasíveis: {len(arcs)} (de {(n+2)*(n+1)} totais)")
 
     model = gp.Model("CVRPTW")
-    model.setParam("TimeLimit",   time_limit)
-    model.setParam("MIPGap",      mip_gap)
-    model.setParam("OutputFlag",  1 if verbose else 0)
-
-    # ── Parâmetros de desempenho ──────────────────────────────────────────────
-    model.setParam("MIPFocus",    1)     # prioriza encontrar boas soluções rapidamente
-    model.setParam("Heuristics",  0.3)   # 30% do tempo em heurísticas internas do Gurobi
-    model.setParam("Cuts",        2)     # cortes agressivos (reduz espaço de busca)
-    model.setParam("Presolve",    2)     # pré-processamento agressivo
-    model.setParam("Threads",     0)     # usa todos os cores disponíveis
+    model.setParam("TimeLimit", time_limit)
+    model.setParam("MIPGap", mip_gap)
+    model.setParam("OutputFlag", 1 if verbose else 0)
 
     # Variáveis 
 
@@ -225,17 +218,7 @@ def solve_cvrptw(
             name=f"cap_{k}"
         )
 
-    # 6. Força veículos a serem usados por ordem crescente
-    #    Elimina soluções equivalentes onde só muda o índice do veículo,
-
-    for k in range(len(K) - 1):
-        model.addConstr(
-            gp.quicksum(x[DS, j, k]   for (_, j) in out_arcs[DS]) >=
-            gp.quicksum(x[DS, j, k+1] for (_, j) in out_arcs[DS]),
-            name=f"sym_{k}"
-        )
-
-    # 7–8. Janelas de tempo já garantidas pelos bounds de t 
+    # 6–8. Janelas de tempo já garantidas pelos bounds de t (lb/ub)
     for k in K:
         model.addConstr(t[DE, k] <= due_time[DE], name=f"tw_de_{k}")
 
@@ -248,17 +231,17 @@ def solve_cvrptw(
                 name=f"time_{i}_{j}_{k}"
             )
 
-    # Warm start com Clarke-Wright Savings
-    print("  [Warm start] A construir solução inicial com Clarke-Wright...")
-    cw_routes = clarke_wright(instance, travel, DS, DE,
-                              demand, ready_time, due_time, service_time)
-    covered = sum(len(r) - 2 for r in cw_routes)
-    print(f"  [Warm start] {len(cw_routes)} rotas construídas para {covered}/{instance.n} clientes")
+    # Warm start com estratégia Nearest Neighbor para ter um ponto de partida válido
+    print("  [Warm start] A construir solução inicial com Nearest Neighbor...")
+    nn_routes = nearest_neighbor(instance, travel, DS, DE,
+                                 demand, ready_time, due_time, service_time)
+    covered = sum(len(r) - 2 for r in nn_routes)
+    print(f"  [Warm start] {len(nn_routes)} rotas construídas para {covered}/{instance.n} clientes")
 
     for key in x:
         x[key].Start = 0.0
 
-    for k, route in enumerate(cw_routes):
+    for k, route in enumerate(nn_routes):
         if k >= len(K):
             break
         current_time = float(ready_time[DS])
@@ -310,9 +293,11 @@ def solve_cvrptw(
 
             display = [0 if node == DE else node for node in route]
 
-            # Ignorar rotas sem clientes (depósito → depósito)
-            if sum(1 for node in display if node != 0) == 0:
-                continue
+            # Extrair tempos de chegada (em minutos desde ready_time do depósito)
+            route_times = []
+            for node in route:
+                time_val = t[node, k].X if t[node, k].X is not None else 0
+                route_times.append(float(time_val))
 
             routes.append({
                 "vehicle":  k,
@@ -320,6 +305,7 @@ def solve_cvrptw(
                 "load":     sum(demand[i] for i in display if i != 0),
                 "distance": sum(travel[route[i], route[i+1]]
                                 for i in range(len(route) - 1)),
+                "times":    route_times,
             })
 
         result["routes"]       = routes
@@ -328,103 +314,7 @@ def solve_cvrptw(
     return result
 
 
-# Algoritmo Clarke-Wright Savings 
-
-def clarke_wright(instance: Instance, travel: dict, DS: int, DE: int,
-                  demand: dict, ready_time: dict, due_time: dict,
-                  service_time: dict) -> list[list[int]]:
-    """
-    Algoritmo de savings de Clarke-Wright para construir uma solução inicial
-    de melhor qualidade que o Nearest Neighbor.
-
-    Ideia: começa com uma rota por cliente (depósito → i → depósito) e
-    vai fundindo rotas pela ordem decrescente de saving s(i,j) = d(0,i) + d(j,0) - d(i,j),
-    respeitando capacidade e janelas de tempo.
-    """
-    n = instance.n
-    clients = list(range(1, n + 1))
-
-    # Calcular savings para todos os pares
-    savings = []
-    for i in clients:
-        for j in clients:
-            if i == j:
-                continue
-            s = (travel.get((DS, i), 0) + travel.get((j, DE), 0)
-                 - travel.get((i, j), float("inf")))
-            savings.append((s, i, j))
-    savings.sort(reverse=True)  # ordem decrescente de saving
-
-    # Começar com uma rota por cliente
-    routes     = [[DS, c, DE] for c in clients]
-    route_of   = {c: idx for idx, c in enumerate(clients)}
-    route_load = {idx: demand[c] for idx, c in enumerate(clients)}
-
-    def route_time_feasible(route):
-        """Verifica se uma rota respeita as janelas de tempo."""
-        t = float(ready_time[DS])
-        for idx in range(len(route) - 1):
-            i, j = route[idx], route[idx + 1]
-            t = max(t + service_time[i] + travel.get((i, j), float("inf")),
-                    float(ready_time[j]))
-            if t > due_time[j]:
-                return False
-        return True
-
-    for (s, i, j) in savings:
-        if s <= 0:
-            break
-
-        ri = route_of.get(i)
-        rj = route_of.get(j)
-
-        if ri is None or rj is None or ri == rj:
-            continue
-
-        route_i = routes[ri]
-        route_j = routes[rj]
-
-        # i deve ser o último cliente de route_i 
-        # j deve ser o primeiro cliente de route_j 
-        if route_i[-2] != i or route_j[1] != j:
-            continue
-
-        new_load = route_load[ri] + route_load[rj]
-        if new_load > instance.vehicle_capacity:
-            continue
-
-        merged = route_i[:-1] + route_j[1:]
-
-        if not route_time_feasible(merged):
-            continue
-
-        routes[ri] = merged
-        routes[rj] = None  
-        route_load[ri] = new_load
-
-        for node in route_j[1:-1]:
-            route_of[node] = ri
-
-    final_routes = [r for r in routes if r is not None and len(r) > 2]
-
-    covered = {node for r in final_routes for node in r[1:-1]}
-    missing = set(clients) - covered
-    if missing:
-        # Usar nearest neighbor para os clientes em falta
-        nn_fallback = nearest_neighbor(
-            instance, travel, DS, DE, demand, ready_time, due_time, service_time
-        )
-        # Adicionar apenas rotas com clientes em falta
-        for r in nn_fallback:
-            r_clients = set(r[1:-1])
-            if r_clients & missing:
-                final_routes.append(r)
-                missing -= r_clients
-
-    return final_routes
-
-
-# Estratégia Nearest Neighbor  
+# Estratégia Nearest Neighbor (warm start) 
 
 def nearest_neighbor(instance: Instance, travel: dict, DS: int, DE: int,
                      demand: dict, ready_time: dict, due_time: dict,
@@ -498,6 +388,9 @@ def nearest_neighbor(instance: Instance, travel: dict, DS: int, DE: int,
     return routes
 
 
+
+# Formato: nome_instância → (num_veículos, distância)
+
 SOLOMON_REFERENCE = {
     # Classe C1 — clientes em cluster, janelas apertadas
     "C101": (10, 828.94), "C102": (10, 828.94), "C103": (10, 828.06),
@@ -562,6 +455,8 @@ def print_solution(result: dict, instance: Instance) -> None:
         print(f"\n  Veículo {r['vehicle']:>2} | Carga: {r['load']:.0f} | Dist: {r['distance']:.2f}")
         print(f"    {route_str}")
 
+
+# Ponto de entrada 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

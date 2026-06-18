@@ -1,28 +1,53 @@
 # http://localhost:5000
 
 
-import importlib.util, os, sys, math, json, time
+import importlib.util, os, sys, math, json, time, threading
 from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-_spec = importlib.util.spec_from_file_location(
-    "cvrptw_solver",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "BigM.py")
-)
-_mod = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_mod)
+# ── Carregar solver.py (ou BigM.py como fallback) ────────────────────────────
+for _fname in ("solver.py", "BigM.py"):
+    _path = os.path.join(os.path.dirname(os.path.abspath(__file__)), _fname)
+    if os.path.exists(_path):
+        _spec = importlib.util.spec_from_file_location("cvrptw_solver", _path)
+        _mod  = importlib.util.module_from_spec(_spec)
+        _spec.loader.exec_module(_mod)
+        break
+else:
+    raise FileNotFoundError("Não encontrei solver.py nem BigM.py")
 Customer     = _mod.Customer
 Instance     = _mod.Instance
 solve_cvrptw = _mod.solve_cvrptw
+load_solomon = _mod.load_solomon
+SOLOMON_REFERENCE = _mod.SOLOMON_REFERENCE
 
 from lisboa_data import DEPOSITO, CLIENTES
+from visualize_routes import generate_html
+
+# Criar diretório para guardar HTMLs das rotas
+ROUTES_DIR = os.path.join(os.path.dirname(__file__), "static", "routes")
+os.makedirs(ROUTES_DIR, exist_ok=True)
 
 
+# ── Gerar HTML em paralelo (sem bloquear) ─────────────────────────────────────
+def generate_routes_html_async(instance, result, instance_name):
+    """Gera HTML de visualização em thread separada (não bloqueia)"""
+    try:
+        output_path = os.path.join(ROUTES_DIR, f"{instance_name}_routes.html")
+        generate_html(instance, result, output_path)
+        print(f"✓ HTML gerado para {instance_name}: {output_path}")
+    except Exception as e:
+        print(f"✗ Erro ao gerar HTML para {instance_name}: {e}")
+
+# ── Todos os locais disponíveis ───────────────────────────────────────────────
 ALL_LOCATIONS = [DEPOSITO] + CLIENTES
 
+
+# ── Haversine (distância real aproximada em metros) ───────────────────────────
 def haversine(lat1, lon1, lat2, lon2) -> float:
-    R = 6371.0  # km
+    """Calcula distância em km entre dois pontos GPS"""
+    R = 6371.0  # raio da Terra em km
     p = math.pi / 180
     a = (math.sin((lat2 - lat1) * p / 2) ** 2 +
          math.cos(lat1 * p) * math.cos(lat2 * p) *
@@ -49,7 +74,7 @@ def get_distances(points: list[dict]) -> dict:
             for i, pi in enumerate(points):
                 for j, pj in enumerate(points):
                     if i != j:
-                        travel[(pi["id"], pj["id"])] = matrix[i][j] / 1000.0 
+                        travel[(pi["id"], pj["id"])] = matrix[i][j] / 1000.0  # metros → km
             return travel, "osrm"
     except Exception:
         pass
@@ -64,10 +89,21 @@ def get_distances(points: list[dict]) -> dict:
     return travel, "haversine"
 
 
+# ── Rotas Flask ───────────────────────────────────────────────────────────────
 
 @app.route("/")
-def index():
+def home():
+    return render_template("home.html")
+
+
+@app.route("/lisboa")
+def lisboa():
     return render_template("index.html", locations=ALL_LOCATIONS)
+
+
+@app.route("/benchmark")
+def benchmark():
+    return render_template("benchmark.html")
 
 
 @app.route("/api/locations")
@@ -98,11 +134,15 @@ def api_solve():
                          f"Precisas de pelo menos {min_vehicles} veículos com capacidade {vehicle_capacity}."
             }), 400
 
+        # Construir lista de pontos
         selected_clients = [loc_map[i] for i in selected_ids if i in loc_map]
         points           = [DEPOSITO] + selected_clients
 
+        # Obter matriz de distâncias
         travel, dist_source = get_distances(points)
 
+        # Construir Instance — re-indexar clientes para IDs sequenciais 1..n
+        # (solver.py assume IDs sequenciais internamente)
         id_original_to_seq = {c["id"]: i+1 for i, c in enumerate(selected_clients)}
         id_seq_to_original = {v: k for k, v in id_original_to_seq.items()}
 
@@ -140,7 +180,8 @@ def api_solve():
                 travel_seq[(seq_i, seq_j)] = travel.get((c_i["id"], c_j["id"]),
                     haversine(c_i["lat"], c_i["lon"], c_j["lat"], c_j["lon"]))
 
-        # Construir mapa de coordenadas 
+        # Injectar distâncias sequenciais no BigM via coord lookup
+        # Construir mapa de coordenadas → ID sequencial
         coord_to_seq = {(round(DEPOSITO["lon"], 8), round(DEPOSITO["lat"], 8)): 0}
         for c in selected_clients:
             coord_to_seq[(round(c["lon"], 8), round(c["lat"], 8))] = id_original_to_seq[c["id"]]
@@ -163,6 +204,7 @@ def api_solve():
             customers=customers
         )
 
+        # Resolver
         result = solve_cvrptw(instance, time_limit=time_limit, mip_gap=0.01, verbose=False)
 
         if result["obj_value"] is None:
@@ -176,16 +218,30 @@ def api_solve():
         routes_out = []
         for r in result["routes"]:
             stops = []
-            for node in r["route"]:
-                orig_id = id_seq_to_original.get(node, 0)  # 0 = depósito
+            
+            # Usar tempos reais do solver se disponíveis
+            solver_times = r.get("times", [])
+            
+            for idx, node in enumerate(r["route"]):
+                orig_id = id_seq_to_original.get(node, 0)
                 p = loc_map.get(orig_id, DEPOSITO)
+                
+                # Converter tempo do solver (minutos desde ready_time) para HH:MM
+                arrival_time_str = ""
+                if idx < len(solver_times):
+                    time_min = int(solver_times[idx])
+                    arrival_hour = 7 + time_min // 60
+                    arrival_min = time_min % 60
+                    arrival_time_str = f"{arrival_hour:02d}:{arrival_min:02d}"
+                
                 stops.append({
-                    "id":     orig_id,
-                    "nome":   p.get("nome", "Depósito"),
-                    "tipo":   p.get("tipo", "Depósito"),
-                    "lat":    p["lat"],
-                    "lon":    p["lon"],
-                    "demand": p.get("demand", 0),
+                    "id":             orig_id,
+                    "nome":           p.get("nome", "Depósito"),
+                    "tipo":           p.get("tipo", "Depósito"),
+                    "lat":            p["lat"],
+                    "lon":            p["lon"],
+                    "demand":         p.get("demand", 0),
+                    "arrival_time":   arrival_time_str,
                 })
             routes_out.append({
                 "vehicle":  r["vehicle"],
@@ -210,9 +266,127 @@ def api_solve():
         return jsonify({"error": f"Erro interno: {str(e)}"}), 500
 
 
+@app.route("/api/benchmark", methods=["POST"])
+def api_benchmark():
+    try:
+        data = request.get_json()
+        instances = data.get("instances", [])
+        time_limit = float(data.get("time_limit", 300))
+
+        if not instances:
+            return jsonify({"error": "Nenhuma instância selecionada"}), 400
+
+        results = []
+
+        for inst_name in instances:
+            try:
+                # Procurar ficheiro Solomon (case-insensitive)
+                solomon_file = None
+                for root, dirs, files in __import__('os').walk("solomon"):
+                    for file in files:
+                        if file.lower() == f"{inst_name.lower()}.txt":
+                            solomon_file = __import__('os').path.join(root, file)
+                            break
+
+                if not solomon_file:
+                    results.append({
+                        "instance": inst_name,
+                        "error": f"Ficheiro não encontrado: {inst_name}.txt"
+                    })
+                    continue
+
+                # Carregar e resolver
+                instance = load_solomon(solomon_file)
+                result = solve_cvrptw(instance, time_limit=time_limit, mip_gap=0.001, verbose=False)
+
+                # Gerar HTML de visualização em paralelo (não bloqueia)
+                if result["obj_value"] is not None:
+                    thread = threading.Thread(
+                        target=generate_routes_html_async,
+                        args=(instance, result, inst_name),
+                        daemon=True
+                    )
+                    thread.start()
+
+                # Procurar referência Solomon
+                ref = SOLOMON_REFERENCE.get(inst_name.upper())
+                ref_veh, ref_dist = ref if ref else (None, None)  # ordem correta: (veículos, distância)
+
+                gap_solomon = None
+                if ref_dist and result["obj_value"]:
+                    gap_solomon = (result["obj_value"] - ref_dist) / ref_dist * 100
+
+                # Construir dados de rotas para visualização
+                route_data = []
+                if result.get("routes"):
+                    # Construir mapa de clientes (índice -> cliente)
+                    clients = {i: c for i, c in enumerate(instance.customers, 1)}
+                    depot = instance.depot
+                    
+                    for route in result["routes"]:
+                        stops = []
+                        
+                        # Processar cada nó da rota
+                        for idx, node in enumerate(route.get("route", [])):
+                            if node == 0:  # Depósito
+                                stops.append({
+                                    "id": 0,
+                                    "nome": "Depósito",
+                                    "lat": depot.x,
+                                    "lon": depot.y,
+                                    "demand": 0
+                                })
+                            else:  # Cliente
+                                client = clients.get(node)
+                                if client:
+                                    stops.append({
+                                        "id": node,
+                                        "nome": f"Cliente {node}",
+                                        "lat": client.x,
+                                        "lon": client.y,
+                                        "demand": client.demand
+                                    })
+                        
+                        route_data.append({
+                            "vehicle": route.get("vehicle"),
+                            "stops": stops,
+                            "distance": route.get("distance"),
+                            "load": route.get("load")
+                        })
+
+                results.append({
+                    "instance": inst_name,
+                    "status": "optimal" if result["status"] == 2 else ("feasible" if result["obj_value"] else "infeasible"),
+                    "distance": result["obj_value"] or 0,
+                    "ref_distance": ref_dist or 0,
+                    "gap_solomon": gap_solomon or 0,
+                    "mip_gap": result["mip_gap"] * 100 if result["mip_gap"] else 0,
+                    "num_vehicles": result["num_vehicles"],
+                    "runtime": result["runtime"],
+                    "routes": route_data,  # Rotas com estrutura correta
+                    "html_url": f"/static/routes/{inst_name}_routes.html"  # URL do HTML gerado
+                })
+            
+            except Exception as e:
+                print(f"Erro ao resolver {inst_name}: {str(e)}")
+                results.append({
+                    "instance": inst_name,
+                    "error": f"Erro na resolução: {str(e)}"
+                })
+
+        return jsonify(results)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Erro: {str(e)}"}), 500
+
+
 if __name__ == "__main__":
     print("\n" + "="*55)
-    print("  CVRPTW Lisboa — Servidor Flask")
-    print("  Abre http://localhost:5000 no browser")
+    print("  CVRPTW — Servidor Flask")
+    print("  ")
+    print("  📍 Lisboa: http://localhost:5000")
+    print("  🔬 Benchmark: http://localhost:5000/benchmark")
     print("="*55 + "\n")
     app.run(debug=False, port=5000)
