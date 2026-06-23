@@ -1,5 +1,5 @@
 """
-Gera um ficheiro HTML com gráfico interativo (Plotly)
+Cria um ficheiro HTML com um gráfico interativo (Plotly)
 
 Comando para correr no terminal:
     python visualize_routes.py in/C101.txt
