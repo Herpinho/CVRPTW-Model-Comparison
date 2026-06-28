@@ -1,15 +1,14 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-import os
 import math
 load_dotenv()
 SOLOMON_DIRECTORY = Path(__file__).parent.parent / "solomon"
 OUTPUT_DIRECTORY = SOLOMON_DIRECTORY / "dzn"
-PRECISION_LEVEL = int(os.getenv("PRECISION_LEVEL"))
+PRECISION_LEVEL = 100
 
-def converter(solomon,size,vehicount):
-    with open(SOLOMON_DIRECTORY / (solomon + "101.txt"),'r') as f:
+def converter(solomon,number,size,vehicount):
+    with open(SOLOMON_DIRECTORY / (solomon + number +"01.txt"),'r') as f:
         lines = f.readlines()
         veh_info = lines[4].split()
         data = [line.split() for line in lines[9:] if line.strip()]
@@ -32,7 +31,7 @@ def converter(solomon,size,vehicount):
         ready.append(str(int(row[4])*PRECISION_LEVEL))
         due.append(str(int(row[5])*PRECISION_LEVEL))
         service.append(str(int(row[6])*PRECISION_LEVEL))
-    with open(OUTPUT_DIRECTORY / (solomon + str(size) + ".dzn"), 'w') as dzn:
+    with open(OUTPUT_DIRECTORY / (number + solomon + str(size) + ".dzn"), 'w') as dzn:
         dzn.write(f"custcount = {len(cust_no) - 1};\n")
         dzn.write(f"vehicount = {vehicount if vehicount else veh_info[0]};\n")
         dzn.write(f"capacity = {int(veh_info[1])*PRECISION_LEVEL};\n\n")
@@ -45,8 +44,9 @@ def converter(solomon,size,vehicount):
 
 if __name__ == "__main__":
     solomon = input('Insert file name (c/r/rc)\n ->')
+    number = input('1/2? \n ->')
     size = input('Insert ammount of customers you wish to have: \n ->') 
     size = size or 101
     vehicount = input('Insert ammount of vehicles you wish to have: \n ->') 
     vehicount = vehicount or 25
-    converter(solomon,size,vehicount)
+    converter(solomon,number,size,vehicount)

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CVRPTW — lisboa_data</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #222; }
+  header {
+    background: #1F4E79; color: white; padding: 16px 24px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header span { font-size: 0.9rem; opacity: 0.8; }
+  .container { display: flex; height: calc(100vh - 60px); }
+  #chart { flex: 1; }
+  .sidebar {
+    width: 280px; background: white; overflow-y: auto;
+    border-left: 1px solid #dde3ea; padding: 16px;
+  }
+  .summary {
+    background: #EBF3FB; border-radius: 8px; padding: 12px; margin-bottom: 16px;
+  }
+  .summary h3 { color: #1F4E79; font-size: 0.85rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric { text-align: center; }
+  .metric .val { font-size: 1.4rem; font-weight: 700; color: #1F4E79; }
+  .metric .lbl { font-size: 0.7rem; color: #666; }
+  .routes-title { font-size: 0.85rem; font-weight: 700; color: #1F4E79; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .route-card {
+    border-radius: 6px; padding: 10px; margin-bottom: 8px;
+    border-left: 4px solid; background: #fafafa;
+    font-size: 0.78rem; cursor: pointer; transition: background 0.15s;
+  }
+  .route-card:hover { background: #f0f4f8; }
+  .route-card .rhead { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .route-card .rnum { font-weight: 700; }
+  .route-card .rpath { color: #555; word-break: break-all; line-height: 1.4; margin-top: 4px; }
+  .ref-box {
+    background: #FFF8E7; border: 1px solid #F0C040; border-radius: 6px;
+    padding: 10px; margin-bottom: 16px; font-size: 0.78rem;
+  }
+  .ref-box h3 { color: #7A5200; font-size: 0.8rem; margin-bottom: 6px; }
+  .gap-good { color: #2CA02C; font-weight: 700; }
+  .gap-ok   { color: #FF7F0E; font-weight: 700; }
+  .gap-bad  { color: #D62728; font-weight: 700; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>CVRPTW — Instância lisboa_data</h1>
+    <span>Gurobi MIP · Laboratório de Projeto 2025/2026 · UAL</span>
+  </div>
+</header>
+<div class="container">
+  <div id="chart"></div>
+  <div class="sidebar">
+    <div class="summary">
+      <h3>Resumo da Solução</h3>
+      <div class="summary-grid">
+        <div class="metric"><div class="val">5</div><div class="lbl">Veículos</div></div>
+        <div class="metric"><div class="val">20</div><div class="lbl">Clientes</div></div>
+        <div class="metric"><div class="val">19.14</div><div class="lbl">Distância</div></div>
+        <div class="metric"><div class="val">42.113s</div><div class="lbl">Tempo</div></div>
+      </div>
+    </div>
+    <div class="routes-title">Rotas (5)</div>
+    
+    <div class="route-card" style="border-left-color:#1F77B4">
+      <div class="rhead">
+        <span class="rnum" style="color:#1F77B4">Veículo 0</span>
+        <span>Carga: 200 | 4082 km</span>
+      </div>
+      <div class="rpath">0 → 7 → 8 → 4 → 15 → 0</div>
+    </div>
+    <div class="route-card" style="border-left-color:#FF7F0E">
+      <div class="rhead">
+        <span class="rnum" style="color:#FF7F0E">Veículo 1</span>
+        <span>Carga: 200 | 3608 km</span>
+      </div>
+      <div class="rpath">0 → 13 → 17 → 2 → 0</div>
+    </div>
+    <div class="route-card" style="border-left-color:#2CA02C">
+      <div class="rhead">
+        <span class="rnum" style="color:#2CA02C">Veículo 2</span>
+        <span>Carga: 200 | 1800 km</span>
+      </div>
+      <div class="rpath">0 → 5 → 0</div>
+    </div>
+    <div class="route-card" style="border-left-color:#D62728">
+      <div class="rhead">
+        <span class="rnum" style="color:#D62728">Veículo 3</span>
+        <span>Carga: 200 | 6267 km</span>
+      </div>
+      <div class="rpath">0 → 18 → 1 → 19 → 9 → 3 → 11 → 0</div>
+    </div>
+    <div class="route-card" style="border-left-color:#9467BD">
+      <div class="rhead">
+        <span class="rnum" style="color:#9467BD">Veículo 4</span>
+        <span>Carga: 200 | 3378 km</span>
+      </div>
+      <div class="rpath">0 → 6 → 10 → 12 → 14 → 16 → 20 → 0</div>
+    </div>
+  </div>
+</div>
+<script>
+const traces = [{"type": "scatter", "mode": "lines", "x": [0, 603, 614, 878, -219, 0], "y": [0, 667, -689, -800, -155, 0], "name": "Ve\u00edculo 0", "line": {"color": "#1F77B4", "width": 2}, "hoverinfo": "skip", "legendgroup": "v0"}, {"type": "scatter", "mode": "markers", "x": [301.5], "y": [333.5], "marker": {"symbol": "arrow", "size": 10, "color": "#1F77B4", "angle": -42.1150940762101, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v0"}, {"type": "scatter", "mode": "markers", "x": [608.5], "y": [-11.0], "marker": {"symbol": "arrow", "size": 10, "color": "#1F77B4", "angle": -179.5352214230445, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v0"}, {"type": "scatter", "mode": "markers", "x": [746.0], "y": [-744.5], "marker": {"symbol": "arrow", "size": 10, "color": "#1F77B4", "angle": -112.80454047132105, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v0"}, {"type": "scatter", "mode": "markers", "x": [329.5], "y": [-477.5], "marker": {"symbol": "arrow", "size": 10, "color": "#1F77B4", "angle": 59.545869037023465, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v0"}, {"type": "scatter", "mode": "markers", "x": [-109.5], "y": [-77.5], "marker": {"symbol": "arrow", "size": 10, "color": "#1F77B4", "angle": -54.71056926601347, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v0"}, {"type": "scatter", "mode": "lines", "x": [0, -219, 197, 812, 0], "y": [0, 255, -122, -1212, 0], "name": "Ve\u00edculo 1", "line": {"color": "#FF7F0E", "width": 2}, "hoverinfo": "skip", "legendgroup": "v1"}, {"type": "scatter", "mode": "markers", "x": [-109.5], "y": [127.5], "marker": {"symbol": "arrow", "size": 10, "color": "#FF7F0E", "angle": 40.656760048310616, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v1"}, {"type": "scatter", "mode": "markers", "x": [-11.0], "y": [66.5], "marker": {"symbol": "arrow", "size": 10, "color": "#FF7F0E", "angle": -132.18444331578877, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v1"}, {"type": "scatter", "mode": "markers", "x": [504.5], "y": [-667.0], "marker": {"symbol": "arrow", "size": 10, "color": "#FF7F0E", "angle": -150.56743155368383, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v1"}, {"type": "scatter", "mode": "markers", "x": [406.0], "y": [-606.0], "marker": {"symbol": "arrow", "size": 10, "color": "#FF7F0E", "angle": 33.820780104182106, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v1"}, {"type": "scatter", "mode": "lines", "x": [0, 680, 0], "y": [0, -589, 0], "name": "Ve\u00edculo 2", "line": {"color": "#2CA02C", "width": 2}, "hoverinfo": "skip", "legendgroup": "v2"}, {"type": "scatter", "mode": "markers", "x": [340.0], "y": [-294.5], "marker": {"symbol": "arrow", "size": 10, "color": "#2CA02C", "angle": -130.89834027383716, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v2"}, {"type": "scatter", "mode": "markers", "x": [340.0], "y": [-294.5], "marker": {"symbol": "arrow", "size": 10, "color": "#2CA02C", "angle": 49.101659726162865, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v2"}, {"type": "scatter", "mode": "lines", "x": [0, 131, 1229, -131, 428, 1064, 526, 0], "y": [0, -44, -1000, 88, -366, -889, -489, 0], "name": "Ve\u00edculo 3", "line": {"color": "#D62728", "width": 2}, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "markers", "x": [65.5], "y": [-22.0], "marker": {"symbol": "arrow", "size": 10, "color": "#D62728", "angle": -108.56606021766922, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "markers", "x": [680.0], "y": [-522.0], "marker": {"symbol": "arrow", "size": 10, "color": "#D62728", "angle": -131.04524054139188, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "markers", "x": [549.0], "y": [-456.0], "marker": {"symbol": "arrow", "size": 10, "color": "#D62728", "angle": 51.34019174590992, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "markers", "x": [148.5], "y": [-139.0], "marker": {"symbol": "arrow", "size": 10, "color": "#D62728", "angle": -129.0822808627754, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "markers", "x": [746.0], "y": [-627.5], "marker": {"symbol": "arrow", "size": 10, "color": "#D62728", "angle": -129.4313853470715, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "markers", "x": [795.0], "y": [-689.0], "marker": {"symbol": "arrow", "size": 10, "color": "#D62728", "angle": 53.36940314443902, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "markers", "x": [263.0], "y": [-244.5], "marker": {"symbol": "arrow", "size": 10, "color": "#D62728", "angle": 47.08769021750797, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v3"}, {"type": "scatter", "mode": "lines", "x": [0, -636, -515, -54, -417, 362, 54, 0], "y": [0, 478, 166, 366, 111, -233, 11, 0], "name": "Ve\u00edculo 4", "line": {"color": "#9467BD", "width": 2}, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers", "x": [-318.0], "y": [239.0], "marker": {"symbol": "arrow", "size": 10, "color": "#9467BD", "angle": 53.07248972449017, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers", "x": [-575.5], "y": [322.0], "marker": {"symbol": "arrow", "size": 10, "color": "#9467BD", "angle": -158.80268567007815, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers", "x": [-284.5], "y": [266.0], "marker": {"symbol": "arrow", "size": 10, "color": "#9467BD", "angle": -66.54689633110095, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers", "x": [-235.5], "y": [238.5], "marker": {"symbol": "arrow", "size": 10, "color": "#9467BD", "angle": -234.91275144672386, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers", "x": [-27.5], "y": [-61.0], "marker": {"symbol": "arrow", "size": 10, "color": "#9467BD", "angle": -113.82585925976028, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers", "x": [208.0], "y": [-111.0], "marker": {"symbol": "arrow", "size": 10, "color": "#9467BD", "angle": 51.613460482314764, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers", "x": [27.0], "y": [5.5], "marker": {"symbol": "arrow", "size": 10, "color": "#9467BD", "angle": -258.486168815513, "line": {"width": 0}}, "showlegend": false, "hoverinfo": "skip", "legendgroup": "v4"}, {"type": "scatter", "mode": "markers+text", "x": [1229, 812, 1064, 878, 680, -636, 603, 614, 428, -515, 526, -54, -219, -417, -219, 362, 197, 131, -131, 54], "y": [-1000, -1212, -889, -800, -589, 478, 667, -689, -366, 166, -489, 366, 255, 111, -155, -233, -122, -44, 88, 11], "name": "Clientes", "marker": {"size": 10, "color": ["#D62728", "#FF7F0E", "#D62728", "#1F77B4", "#2CA02C", "#9467BD", "#1F77B4", "#1F77B4", "#D62728", "#9467BD", "#D62728", "#9467BD", "#FF7F0E", "#9467BD", "#1F77B4", "#9467BD", "#FF7F0E", "#D62728", "#D62728", "#9467BD"], "line": {"color": "white", "width": 1.5}}, "text": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"], "textposition": "top center", "textfont": {"size": 7, "color": "#333"}, "hovertext": ["<b>Cliente 1</b><br>Pos: (1229, -1000)<br>Procura: 20<br>Janela: [9960, 19920]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 3", "<b>Cliente 2</b><br>Pos: (812, -1212)<br>Procura: 10<br>Janela: [4980, 14940]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 1", "<b>Cliente 3</b><br>Pos: (1064, -889)<br>Procura: 25<br>Janela: [4980, 19920]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 3", "<b>Cliente 4</b><br>Pos: (878, -800)<br>Procura: 25<br>Janela: [9960, 19920]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 0", "<b>Cliente 5</b><br>Pos: (680, -589)<br>Procura: 35<br>Janela: [4980, 14940]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 2", "<b>Cliente 6</b><br>Pos: (-636, 478)<br>Procura: 15<br>Janela: [9960, 19920]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 4", "<b>Cliente 7</b><br>Pos: (603, 667)<br>Procura: 55<br>Janela: [9960, 29880]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 0", "<b>Cliente 8</b><br>Pos: (614, -689)<br>Procura: 80<br>Janela: [4980, 29880]<br>Servi\u00e7o: 1660<br>Ve\u00edculo: 0", "<b>Cliente 9</b><br>Pos: (428, -366)<br>Procura: 30<br>Janela: [4980, 14940]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 3", "<b>Cliente 10</b><br>Pos: (-515, 166)<br>Procura: 40<br>Janela: [4980, 14940]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 4", "<b>Cliente 11</b><br>Pos: (526, -489)<br>Procura: 10<br>Janela: [9960, 39840]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 3", "<b>Cliente 12</b><br>Pos: (-54, 366)<br>Procura: 45<br>Janela: [9960, 24900]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 4", "<b>Cliente 13</b><br>Pos: (-219, 255)<br>Procura: 50<br>Janela: [9960, 24900]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 1", "<b>Cliente 14</b><br>Pos: (-417, 111)<br>Procura: 60<br>Janela: [9960, 34860]<br>Servi\u00e7o: 1660<br>Ve\u00edculo: 4", "<b>Cliente 15</b><br>Pos: (-219, -155)<br>Procura: 35<br>Janela: [14940, 29880]<br>Servi\u00e7o: 1245<br>Ve\u00edculo: 0", "<b>Cliente 16</b><br>Pos: (362, -233)<br>Procura: 12<br>Janela: [9960, 39840]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 4", "<b>Cliente 17</b><br>Pos: (197, -122)<br>Procura: 70<br>Janela: [9960, 34860]<br>Servi\u00e7o: 1660<br>Ve\u00edculo: 1", "<b>Cliente 18</b><br>Pos: (131, -44)<br>Procura: 20<br>Janela: [4980, 24900]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 3", "<b>Cliente 19</b><br>Pos: (-131, 88)<br>Procura: 90<br>Janela: [4980, 29880]<br>Servi\u00e7o: 1660<br>Ve\u00edculo: 3", "<b>Cliente 20</b><br>Pos: (54, 11)<br>Procura: 15<br>Janela: [9960, 39840]<br>Servi\u00e7o: 830<br>Ve\u00edculo: 4"], "hoverinfo": "text", "showlegend": true}, {"type": "scatter", "mode": "markers+text", "x": [0], "y": [0], "name": "Dep\u00f3sito", "marker": {"size": 18, "color": "#1F4E79", "symbol": "star", "line": {"color": "white", "width": 2}}, "text": ["D"], "textposition": "top center", "textfont": {"size": 10, "color": "white"}, "hovertext": ["<b>Dep\u00f3sito</b><br>Pos: (0, 0)<br>Janela: [0, 59760]"], "hoverinfo": "text", "showlegend": true}];
+const layout = {
+  margin: { t: 20, l: 40, r: 20, b: 40 },
+  paper_bgcolor: "#f0f4f8",
+  plot_bgcolor: "#ffffff",
+  xaxis: { title: "X", gridcolor: "#e8edf2", zeroline: false },
+  yaxis: { title: "Y", gridcolor: "#e8edf2", zeroline: false, scaleanchor: "x" },
+  legend: { orientation: "v", x: 1.01, y: 1, bgcolor: "rgba(0,0,0,0)" },
+  hovermode: "closest",
+  font: { family: "Segoe UI, Arial, sans-serif" },
+};
+const config = { responsive: true, displayModeBar: true,
+  modeBarButtonsToRemove: ["lasso2d", "select2d"] };
+Plotly.newPlot("chart", traces, layout, config);
+</script>
+</body>
+</html>

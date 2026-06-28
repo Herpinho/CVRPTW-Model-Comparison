@@ -20,12 +20,13 @@ array[Nodes] of int: due;
 array[Nodes] of int: service;
 
 array[Vehicles, Nodes] of var Nodes: successor;
-array[Vehicles, Nodes] of var 0..1000000: arrival;
+array[Vehicles, Nodes] of var 0..due[depot]: arrival;
 array[Vehicles, Nodes] of var 0..capacity: load;
+array[Vehicles] of var int: distance;
 
 %Map creation and score calc
 array[Nodes, Nodes] of int: dists = array2d(Nodes, Nodes, [
-    round(sqrt((x[i]-x[j])^2 + (y[i]-y[j])^2)*100)
+    round(sqrt((x[i]-x[j])^2 + (y[i]-y[j])^2))
     | i, j in Nodes
 ]);
 
@@ -54,10 +55,6 @@ constraint forall(v in Vehicles, i in Nodes) (
 constraint forall (v in Vehicles, i in Nodes) (
     load[v,i] <= capacity
 );
-/* constraint forall(v in 1..vehicount-1) (
-    lex_lesseq(row(successor, v), row(successor, v+1))
-);  removed but mantained just in case*/
-
 constraint forall(v in Vehicles, i in Nodes) (
     let {var Nodes: j = successor[v,i]} in
     if j != i then
@@ -76,17 +73,21 @@ constraint forall(v in 1..vehicount-1) (
 constraint forall(v in Vehicles) (
     (successor[v, depot] == depot) -> forall(c in Customers) (successor[v, c] == c)
 );
-constraint forall(v in Vehicles, i in Nodes, j in Customers where i != j) (
+/*constraint forall(v in Vehicles, i in Nodes, j in Customers where i != j) (
     if ready[i] + service[i] + dists[i,j] > due[j] then
         successor[v,i] != j
     else
         true
     endif
-);
+);*/
 
-var int: vehicle_penalty = sum(v in Vehicles) (
-    bool2int(successor[v, depot] != depot) * 20000
-);
+/*var int: vehicle_penalty = sum(v in Vehicles) (
+    bool2int(successor[v, depot] != depot) * 20000 %20000 if solomon ;-; 800 if lisboa_data
+);*/
 var int: score = sum(v in Vehicles, i in Nodes) (
     dists[i, successor[v,i]]
-) + vehicle_penalty;
+); %+ vehicle_penalty;
+constraint forall(v in Vehicles) (
+    distance[v] = sum(i in Nodes) (dists[i, successor[v,i]])
+);
+constraint score < 100000;
