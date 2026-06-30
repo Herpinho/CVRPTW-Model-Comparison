@@ -6,7 +6,7 @@ from ortools.constraint_solver import pywrapcp
 from ortools.constraint_solver import routing_enums_pb2
 
 
-# ── Estruturas de dados
+# Estruturas de dados
 
 @dataclass
 class Customer:
@@ -32,7 +32,7 @@ class Instance:
         return len(self.customers)
 
 
-# ── Parser dos ficheiros de Solomon 
+#Parser dos ficheiros de Solomon 
 
 def load_solomon(filepath: str) -> Instance:
     with open(filepath) as f:
@@ -77,13 +77,13 @@ def load_solomon(filepath: str) -> Instance:
     return Instance(name, capacity, num_vehicles, depot, customers)
 
 
-# ── Distância euclidiana (ponto de extensão)
+#  Distância euclidiana (ponto de extensão)
 
 def euclidean(ax, ay, bx, by) -> float:
     return math.sqrt((ax - bx) ** 2 + (ay - by) ** 2)
 
 
-# ── Solver OR-Tools 
+# Solver OR-Tools 
 
 def solve_cvrptw(
     instance: Instance,
@@ -111,7 +111,7 @@ def solve_cvrptw(
     all_nodes = [instance.depot] + instance.customers
     n = len(all_nodes)
 
-    SCALE = 1000  # converte float → inteiro mantendo precisão milimétrica
+    SCALE = 1000  # converte float 
 
     # Matriz de distâncias reais — usa a função global `euclidean`
     dist_real = [[0.0] * n for _ in range(n)]
@@ -247,7 +247,7 @@ def solve_cvrptw(
     }
 
 
-# ── Referências Solomon 
+#  Referências Solomon 
 # Formato: nome_instância → (num_veículos, distância)
 
 SOLOMON_REFERENCE = {
@@ -280,7 +280,7 @@ SOLOMON_REFERENCE = {
 }
 
 
-# ── print_solution 
+#  print_solution 
 
 def print_solution(result: dict, instance: Instance) -> None:
     status_map = {
@@ -323,7 +323,7 @@ def print_solution(result: dict, instance: Instance) -> None:
         print(f"    {route_str}")
 
 
-# ── Ponto de entrada 
+#  Ponto de entrada 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
