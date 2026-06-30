@@ -1,11 +1,6 @@
 """
-Visualização interativa das rotas CVRPTW
-Gera um ficheiro HTML com gráfico interativo (Plotly)
-Laboratório de Projeto 2025/2026 — UAL
-
-Uso:
+Usar:
     python visualize_routes.py solomon/C101.txt
-    python visualize_routes.py solomon/R101.txt
 """
 
 import sys
@@ -13,8 +8,7 @@ import json
 import math
 from BigM import load_solomon, solve_cvrptw
 
-# ── Paleta de cores para as rotas ─────────────────────────────────────────────
-
+# Paleta de cores para as rotas 
 COLORS = [
     "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD",
     "#8C564B", "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF",
@@ -27,7 +21,7 @@ def get_color(k: int) -> str:
     return COLORS[k % len(COLORS)]
 
 
-# ── Construir dados Plotly ────────────────────────────────────────────────────
+# Construir dados Plotly 
 
 def build_plotly_data(instance, result: dict) -> dict:
     depot    = instance.depot
@@ -37,7 +31,7 @@ def build_plotly_data(instance, result: dict) -> dict:
     traces   = []
     route_info = []
 
-    # ── Traços das rotas ──────────────────────────────────────────────────────
+    #  Traços das rotas 
     for r in result["routes"]:
         route   = r["route"]
         color   = get_color(r["vehicle"])
@@ -88,7 +82,7 @@ def build_plotly_data(instance, result: dict) -> dict:
             "color":    color,
         })
 
-    # ── Clientes ──────────────────────────────────────────────────────────────
+    # Clientes 
     # Determinar a qual veículo pertence cada cliente
     client_vehicle = {}
     for r in result["routes"]:
@@ -129,7 +123,7 @@ def build_plotly_data(instance, result: dict) -> dict:
         "showlegend": True,
     })
 
-    # ── Depósito ──────────────────────────────────────────────────────────────
+    # Depósito 
     traces.append({
         "type": "scatter", "mode": "markers+text",
         "x": [depot.x], "y": [depot.y],
@@ -150,7 +144,7 @@ def build_plotly_data(instance, result: dict) -> dict:
     return {"traces": traces, "route_info": route_info}
 
 
-# ── Gerar HTML ────────────────────────────────────────────────────────────────
+# Gerar HTML 
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="pt">
@@ -299,7 +293,7 @@ def generate_html(instance, result: dict, output_path: str):
     print(f"  Visualização guardada em: {output_path}")
 
 
-# ── Ponto de entrada ──────────────────────────────────────────────────────────
+# Ponto de entrada 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
