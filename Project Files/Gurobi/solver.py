@@ -293,7 +293,7 @@ def solve_cvrptw(
 
             display = [0 if node == DE else node for node in route]
 
-            # Extrair tempos de chegada (em minutos desde ready_time do depósito)
+            # Extrair tempos de chegada 
             route_times = []
             for node in route:
                 time_val = t[node, k].X if t[node, k].X is not None else 0
