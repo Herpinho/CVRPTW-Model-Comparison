@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-# ── Carregar solver.py (ou BigM.py como fallback) ────────────────────────────
+# Carregar solver.py
 for _fname in ("solver.py", "BigM.py"):
     _path = os.path.join(os.path.dirname(os.path.abspath(__file__)), _fname)
     if os.path.exists(_path):
@@ -30,7 +30,7 @@ ROUTES_DIR = os.path.join(os.path.dirname(__file__), "static", "routes")
 os.makedirs(ROUTES_DIR, exist_ok=True)
 
 
-# ── Gerar HTML em paralelo (sem bloquear) ─────────────────────────────────────
+# Gerar HTML em paralelo (sem bloquear) 
 def generate_routes_html_async(instance, result, instance_name):
     """Gera HTML de visualização em thread separada (não bloqueia)"""
     try:
@@ -40,11 +40,11 @@ def generate_routes_html_async(instance, result, instance_name):
     except Exception as e:
         print(f"✗ Erro ao gerar HTML para {instance_name}: {e}")
 
-# ── Todos os locais disponíveis ───────────────────────────────────────────────
+# Todos os locais disponíveis 
 ALL_LOCATIONS = [DEPOSITO] + CLIENTES
 
 
-# ── Haversine (distância real aproximada em metros) ───────────────────────────
+# Haversine (distância real aproximada em metros) 
 def haversine(lat1, lon1, lat2, lon2) -> float:
     """Calcula distância em km entre dois pontos GPS"""
     R = 6371.0  # raio da Terra em km
@@ -89,7 +89,7 @@ def get_distances(points: list[dict]) -> dict:
     return travel, "haversine"
 
 
-# ── Rotas Flask ───────────────────────────────────────────────────────────────
+# Rotas Flask 
 
 @app.route("/")
 def home():
@@ -180,8 +180,7 @@ def api_solve():
                 travel_seq[(seq_i, seq_j)] = travel.get((c_i["id"], c_j["id"]),
                     haversine(c_i["lat"], c_i["lon"], c_j["lat"], c_j["lon"]))
 
-        # Injectar distâncias sequenciais no BigM via coord lookup
-        # Construir mapa de coordenadas → ID sequencial
+        # Construir mapa de coordenadas
         coord_to_seq = {(round(DEPOSITO["lon"], 8), round(DEPOSITO["lat"], 8)): 0}
         for c in selected_clients:
             coord_to_seq[(round(c["lon"], 8), round(c["lat"], 8))] = id_original_to_seq[c["id"]]
@@ -204,7 +203,6 @@ def api_solve():
             customers=customers
         )
 
-        # Resolver
         result = solve_cvrptw(instance, time_limit=time_limit, mip_gap=0.01, verbose=False)
 
         if result["obj_value"] is None:
@@ -214,7 +212,7 @@ def api_solve():
                 "status": "infeasible"
             }), 400
 
-        # Construir resposta — converter IDs sequenciais de volta para originais
+        # Construir resposta - converter IDs sequenciais de volta para originais
         routes_out = []
         for r in result["routes"]:
             stops = []
@@ -226,7 +224,6 @@ def api_solve():
                 orig_id = id_seq_to_original.get(node, 0)
                 p = loc_map.get(orig_id, DEPOSITO)
                 
-                # Converter tempo do solver (minutos desde ready_time) para HH:MM
                 arrival_time_str = ""
                 if idx < len(solver_times):
                     time_min = int(solver_times[idx])
@@ -280,7 +277,6 @@ def api_benchmark():
 
         for inst_name in instances:
             try:
-                # Procurar ficheiro Solomon (case-insensitive)
                 solomon_file = None
                 for root, dirs, files in __import__('os').walk("solomon"):
                     for file in files:
@@ -295,11 +291,10 @@ def api_benchmark():
                     })
                     continue
 
-                # Carregar e resolver
                 instance = load_solomon(solomon_file)
                 result = solve_cvrptw(instance, time_limit=time_limit, mip_gap=0.001, verbose=False)
 
-                # Gerar HTML de visualização em paralelo (não bloqueia)
+                # Gerar HTML de visualização em paralelo
                 if result["obj_value"] is not None:
                     thread = threading.Thread(
                         target=generate_routes_html_async,
@@ -308,9 +303,8 @@ def api_benchmark():
                     )
                     thread.start()
 
-                # Procurar referência Solomon
                 ref = SOLOMON_REFERENCE.get(inst_name.upper())
-                ref_veh, ref_dist = ref if ref else (None, None)  # ordem correta: (veículos, distância)
+                ref_veh, ref_dist = ref if ref else (None, None)  
 
                 gap_solomon = None
                 if ref_dist and result["obj_value"]:
@@ -319,7 +313,6 @@ def api_benchmark():
                 # Construir dados de rotas para visualização
                 route_data = []
                 if result.get("routes"):
-                    # Construir mapa de clientes (índice -> cliente)
                     clients = {i: c for i, c in enumerate(instance.customers, 1)}
                     depot = instance.depot
                     
@@ -336,7 +329,7 @@ def api_benchmark():
                                     "lon": depot.y,
                                     "demand": 0
                                 })
-                            else:  # Cliente
+                            else:  
                                 client = clients.get(node)
                                 if client:
                                     stops.append({
@@ -363,8 +356,8 @@ def api_benchmark():
                     "mip_gap": result["mip_gap"] * 100 if result["mip_gap"] else 0,
                     "num_vehicles": result["num_vehicles"],
                     "runtime": result["runtime"],
-                    "routes": route_data,  # Rotas com estrutura correta
-                    "html_url": f"/static/routes/{inst_name}_routes.html"  # URL do HTML gerado
+                    "routes": route_data,  
+                    "html_url": f"/static/routes/{inst_name}_routes.html"  
                 })
             
             except Exception as e:
