@@ -55,7 +55,10 @@ def converter(filename):
         dzn.write(f"ready = [{', '.join(ready)}];\n")
         dzn.write(f"due = [{', '.join(due)}];\n")
         dzn.write(f"service = [{', '.join(service)}];\n")
-if __name__ == "__main__":
+
+def start_converter():
     filename = input('Insert file name\n ->')
     clean_name = filename.strip().replace(".py", "")
     converter(clean_name)
+if __name__ == "__main__":
+    start_converter()

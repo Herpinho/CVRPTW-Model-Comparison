@@ -1,0 +1,7 @@
+minizinc==0.6.0
+python-dotenv==1.0.1
+plotly==5.24.0
+numpy==2.1.0
+importlib-metadata>=7.0.0
+packaging>=23.0
+setuptools>=68.0.0

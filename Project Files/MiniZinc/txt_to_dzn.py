@@ -41,12 +41,13 @@ def converter(solomon,number,size,vehicount):
         dzn.write(f"ready = [{', '.join(ready)}];\n")
         dzn.write(f"due = [{', '.join(due)}];\n")
         dzn.write(f"service = [{', '.join(service)}];\n")
-
-if __name__ == "__main__":
+def start_converter():
     solomon = input('Insert file name (c/r/rc)\n ->')
-    number = input('1/2? \n ->')
+    number = input('Insert set (1-3): ? \n ->')
     size = input('Insert ammount of customers you wish to have: \n ->') 
     size = size or 101
     vehicount = input('Insert ammount of vehicles you wish to have: \n ->') 
     vehicount = vehicount or 25
     converter(solomon,number,size,vehicount)
+if __name__ == "__main__":
+    start_converter()

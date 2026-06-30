@@ -320,8 +320,8 @@ def generate_html(instance, result: dict, output_path: str):
 optimize=True
 if __name__ == "__main__":
     from Minizinc import start_minizinc
-    filename = input("Insira o nome do ficheiro: (c25/r25/rc25)")
-    option = input("optimize(1) or satisfy(2)?")
+    filename = input("Insira o nome do ficheiro: ")
+    option = input("Optimize(1) or Satisfy(2)?")
     if option== "1":
         optimize=True
     elif option == "2":
