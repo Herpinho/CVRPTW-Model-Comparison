@@ -1,9 +1,5 @@
 """
-Laboratório de Projeto 2025/2026 — UAL
-Corre uma ou mais instâncias Solomon com limites de tempo de 5 em 5 minutos
-até aos 30 minutos e produz uma tabela comparativa.
-    
-Como correr no terminal ------> python benchmark_time.py in/R201.txt
+usar: python benchmark_time.py in/R201.txt
 """
 
 import sys
@@ -11,7 +7,7 @@ import time
 import importlib.util
 import os
 
-# ── Carregar solver.py 
+#  Carregar solver.py 
 def load_solver():
     for name in ("solver.py"):
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name)
@@ -28,7 +24,7 @@ load_solomon      = solver.load_solomon
 solve_cvrptw      = solver.solve_cvrptw
 SOLOMON_REFERENCE = solver.SOLOMON_REFERENCE
 
-# ── Configuração
+# Configuração
 TIME_LIMITS = [
     300,    # 5 min
     600,    # 10 min
@@ -43,7 +39,7 @@ TIME_LIMITS = [
 ]
 MIP_GAP = 0.001  # gap muito baixo para não parar cedo
 
-# ── Correr benchmark para uma instância 
+# Correr benchmark para uma instância 
 def benchmark_instance(filepath: str):
     instance = load_solomon(filepath)
     ref       = SOLOMON_REFERENCE.get(instance.name.upper())
@@ -125,12 +121,12 @@ def benchmark_instance(filepath: str):
             "optimal":    result["status"] == "OPTIMAL",
         })
 
-        # Se chegou ao ótimo, não vale a pena continuar
+        # Quando chegamos ao otimo não e necessário continuar
         if result["status"] == "OPTIMAL":
             print(f"\n  ✓ Ótimo global encontrado aos {label}! A parar benchmark.")
             break
 
-    # ── Resumo final 
+    # Resumo final 
     valid = [r for r in results if r is not None]
     if len(valid) >= 2:
         first = valid[0]
@@ -155,7 +151,7 @@ def benchmark_instance(filepath: str):
     return results
 
 
-# ── Ponto de entrada 
+#  Ponto de entrada 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Uso: python benchmark_time.py <instancia> [<instancia2> ...]")
