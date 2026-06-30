@@ -51,7 +51,7 @@ class Instance:
         return f"Instance(name={self.name}, clients={self.n})"
 
 
-# ── Paleta de cores para as rotas ─────────────────────────────────────────────
+# Paleta de cores para as rotas 
 
 COLORS = [
     "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD",
@@ -65,7 +65,7 @@ def get_color(k: int) -> str:
     return COLORS[k % len(COLORS)]
 
 
-# ── Construir dados Plotly ────────────────────────────────────────────────────
+#Construir dados Plotly 
 
 def build_plotly_data(instance, result: dict) -> dict:
     depot    = instance.depot
@@ -75,7 +75,7 @@ def build_plotly_data(instance, result: dict) -> dict:
     traces   = []
     route_info = []
 
-    # ── Traços das rotas ──────────────────────────────────────────────────────
+    # Traços das rotas
     for r in result["routes"]:
         route   = r["route"]
         color   = get_color(r["vehicle"])
@@ -126,7 +126,7 @@ def build_plotly_data(instance, result: dict) -> dict:
             "color":    color,
         })
 
-    # ── Clientes ──────────────────────────────────────────────────────────────
+    # Clientes 
     # Determinar a qual veículo pertence cada cliente
     client_vehicle = {}
     for r in result["routes"]:
@@ -167,7 +167,7 @@ def build_plotly_data(instance, result: dict) -> dict:
         "showlegend": True,
     })
 
-    # ── Depósito ──────────────────────────────────────────────────────────────
+    #Depósito 
     traces.append({
         "type": "scatter", "mode": "markers+text",
         "x": [depot.x], "y": [depot.y],
@@ -188,7 +188,7 @@ def build_plotly_data(instance, result: dict) -> dict:
     return {"traces": traces, "route_info": route_info}
 
 
-# ── Gerar HTML ────────────────────────────────────────────────────────────────
+#  Gerar HTML 
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="pt">
@@ -316,7 +316,7 @@ def generate_html(instance, result: dict, output_path: str):
     print(f"  Visualização guardada em: {output_path}")
 
 
-# ── Ponto de entrada ──────────────────────────────────────────────────────────
+#Ponto de entrada
 optimize=True
 if __name__ == "__main__":
     from Minizinc import start_minizinc
