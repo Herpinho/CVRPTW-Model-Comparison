@@ -35,7 +35,7 @@
   .tab-content { display: none; flex: 1; overflow-y: auto; padding: 14px; }
   .tab-content.active { display: block; }
 
-  /* ── Painel de configuração ── */
+  /* ─ Painel de configuração ─ */
   .section-title {
     font-size: 0.75rem; font-weight: 700; color: #1F4E79;
     text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 6px;
@@ -94,7 +94,7 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Lista de clientes selecionados ── */
+  /* ─ Lista de clientes selecionados ─ */
   .client-chip {
     display: inline-flex; align-items: center; gap: 5px;
     background: #EBF3FB; border: 1px solid #BDD7EE; border-radius: 20px;
@@ -104,7 +104,7 @@
   .client-chip:hover { background: #BDD7EE; }
   .client-chip .rm { font-size: 0.9rem; color: #888; margin-left: 2px; }
 
-  /* ── Painel de resultados ── */
+  /* ─ Painel de resultados ─ */
   .result-summary {
     background: #EBF3FB; border-radius: 8px; padding: 12px; margin-bottom: 12px;
   }
@@ -140,7 +140,7 @@
   .dist-source .osrm  { color: #2CA02C; font-weight: 600; }
   .dist-source .haversine { color: #FF7F0E; font-weight: 600; }
 
-  /* ── Leaflet custom markers ── */
+  /* ─ Leaflet custom markers ─ */
   .marker-depot {
     font-size: 22px; text-align: center; line-height: 30px;
     filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.4));
@@ -180,7 +180,7 @@
       <div class="tab" id="tab-results" onclick="switchTab('results')">📊 Resultados</div>
     </div>
 
-    <!-- ── Tab Configuração ── -->
+    <!-- ─ Tab Configuração ─ -->
     <div class="tab-content active" id="content-config">
 
       <div class="section-title">Locais Selecionados</div>
@@ -240,7 +240,7 @@
 
     </div>
 
-    <!-- ── Tab Resultados ── -->
+    <!-- ─ Tab Resultados ─ -->
     <div class="tab-content" id="content-results">
       <div style="text-align:center;padding:30px;color:#aaa;font-size:0.85rem">
         Resolve uma instância para ver os resultados aqui.
@@ -250,7 +250,7 @@
 </div>
 
 <script>
-// ── Dados locais
+// ─ Dados locais
 const ALL_LOCATIONS = {{ locations | tojson }};
 const DEPOT = ALL_LOCATIONS.find(l => l.id === 0);
 const CLIENTS = ALL_LOCATIONS.filter(l => l.id !== 0);
@@ -265,13 +265,13 @@ const ROUTE_COLORS = [
   "#8C564B","#E377C2","#17BECF","#BCBD22","#7F7F7F"
 ];
 
-// ── Estado 
+// ─ Estado 
 let selectedIds   = new Set();
 let markerMap     = {};
 let routeLayers   = [];
 let timerInterval = null;
 
-// ── Mapa 
+// ─ Mapa 
 const map = L.map('map').setView([38.7252, -9.1500], 15);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors', maxZoom: 19
@@ -324,7 +324,7 @@ function buildPopup(c) {
     <i style="color:#1F4E79;font-size:0.8rem">Clica para ${selectedIds.has(c.id) ? 'remover' : 'selecionar'}</i>`;
 }
 
-// ── Lógica de seleção 
+// ─ Lógica de seleção 
 function toggleClient(id) {
   if (selectedIds.has(id)) {
     selectedIds.delete(id);
@@ -388,7 +388,7 @@ function clearSelection() {
   document.getElementById('tab-results').textContent = '📊 Resultados';
 }
 
-// ── Validação de restrições 
+// ─ Validação de restrições 
 function validateConstraints() {
   const nVeh   = parseInt(document.getElementById('num-vehicles').value) || 0;
   const cap    = parseInt(document.getElementById('capacity').value) || 0;
@@ -421,7 +421,7 @@ function validateConstraints() {
   btn.disabled = false;
 }
 
-// ── Resolver 
+// ─ Resolver 
 async function solve() {
   const btn       = document.getElementById('btn-resolve');
   const loading   = document.getElementById('loading');
@@ -478,7 +478,7 @@ async function solve() {
   }
 }
 
-// ── Desenhar as rotas no mapa 
+// ─ Desenhar as rotas no mapa 
 function drawRoutes(data) {
   clearRoutes();
   data.routes.forEach((r, idx) => {
@@ -533,7 +533,7 @@ function clearRoutes() {
   });
 }
 
-// ── Mostrar os resultados 
+// ─ Mostrar os resultados 
 function showResults(data) {
   const statusClass = data.status === 'optimal' ? 'status-optimal' : 'status-feasible';
   const statusLabel = data.status === 'optimal' ? '✓ Ótimo Global' : '~ Solução Feasível';
@@ -585,7 +585,7 @@ function showResults(data) {
   document.getElementById('tab-results').textContent = `📊 Resultados (${data.num_vehicles})`;
 }
 
-// ── Tabs 
+// ─ Tabs 
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
