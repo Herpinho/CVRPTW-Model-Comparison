@@ -1,7 +1,5 @@
 """
-Cria um ficheiro HTML com um gráfico interativo (Plotly)
-
-Comando para correr no terminal:
+usar:
     python visualize_routes.py in/C101.txt
     python visualize_routes.py in/R101.txt
 """
@@ -13,7 +11,7 @@ import time
 import importlib.util
 import pathlib
 
-# ── Carregar solver.py 
+# Carregar solver.py 
 _mod_path = pathlib.Path(__file__).parent / "solver.py"
 _spec     = importlib.util.spec_from_file_location("cvrptw_solver", _mod_path)
 _mod      = importlib.util.module_from_spec(_spec)
@@ -65,7 +63,7 @@ def solve_cvrptw(instance, time_limit: float = 30.0) -> dict:
     }
 
 
-# ── Construir os dados Plotly 
+#  Construir os dados Plotly 
 
 def build_plotly_data(instance, result: dict) -> dict:
     depot    = instance.depot
@@ -176,7 +174,7 @@ def build_plotly_data(instance, result: dict) -> dict:
     return {"traces": traces, "route_info": route_info}
 
 
-# ── Template do HTML 
+# Template do HTML 
 
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="pt">
@@ -326,7 +324,7 @@ def generate_html(instance, result: dict, output_path: str):
     print(f"  Visualização guardada em: {output_path}")
 
 
-# ── entry pointt
+# entry point
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
