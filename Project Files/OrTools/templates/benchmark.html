@@ -289,7 +289,7 @@
   </header>
 
   <div class="main-content">
-    <!-- ── Sidebar ── -->
+    <!-- ─ Sidebar ─ -->
     <div class="sidebar">
       <div class="section-title">Seleção de Instâncias</div>
 
@@ -345,7 +345,7 @@
       </div>
     </div>
 
-    <!-- ── Resultados ── -->
+    <!-- ─ Resultados ─ -->
     <div class="results-container">
       <div class="status-bar" id="status-bar"></div>
 
@@ -363,7 +363,7 @@
               <th>Estado</th>
               <th>Distância</th>
               <th>Gap Solomon</th>
-              <th>MIP Gap</th>
+              
               <th>Veículos</th>
               <th>Tempo (s)</th>
               <th>Ação</th>
@@ -387,7 +387,7 @@
 </div>
 
 <script>
-// ── Dados das instâncias Solomon ──────────────────────────────────────────────
+// ─ Dados das instâncias Solomon 
 const INSTANCES = {
   c1: [
     { name: "C101", ref_dist: 828.94, ref_veh: 10 },
@@ -442,8 +442,8 @@ const GROUP_LABELS = {
   rc2: "group-rc2"
 };
 
-// ── Renderizar checkboxes ──────────────────────────────────────────────────
-// ── Referências Solomon (para gráficos) ──────────────────────────────────────
+// ─ Renderizar checkboxes 
+// ─ Referências Solomon (para gráficos) 
 const SOLOMON_REFERENCE = {
   "C101": [10, 828.94], "C102": [10, 828.94], "C103": [10, 828.94], "C104": [10, 828.94], "C105": [10, 828.94],
   "C201": [3, 591.56], "C202": [3, 591.56], "C203": [3, 591.56], "C204": [3, 591.56], "C205": [3, 591.56],
@@ -468,13 +468,13 @@ function renderInstances() {
   }
 }
 
-// ── Obter seleções ─────────────────────────────────────────────────────────
+// ─ Obter seleções 
 function getSelectedInstances() {
   const checkboxes = document.querySelectorAll("input[type='checkbox']:checked");
   return Array.from(checkboxes).map(cb => cb.value);
 }
 
-// ── Status bar ─────────────────────────────────────────────────────────────
+// ─ Status bar 
 function showStatus(message, isError = false) {
   const bar = document.getElementById("status-bar");
   bar.textContent = message;
@@ -488,7 +488,7 @@ function clearStatus() {
   bar.classList.remove("active", "error");
 }
 
-// ── Resolver ───────────────────────────────────────────────────────────────
+// ─ Resolver 
 async function solve() {
   const selected = getSelectedInstances();
   if (selected.length === 0) {
@@ -529,7 +529,7 @@ async function solve() {
   }
 }
 
-// ── Mostrar resultados ─────────────────────────────────────────────────────
+// ─ Mostrar resultados 
 let benchmarkResults = {};  // Guardar resultados para visualização
 
 function displayResults(results) {
@@ -610,7 +610,7 @@ function displayResults(results) {
   drawChart(0);
 }
 
-// ── Sistema de Carrossel de Gráficos ─────────────────────────────────────────
+// ─ Sistema de Carrossel de Gráficos 
 function drawChart(index) {
   window.currentChart = index;
   const { instances, distances, references, gaps, vehicles } = window.chartData;
@@ -694,7 +694,7 @@ function prevChart() {
   drawChart(prev);
 }
 
-// ── Event listeners ────────────────────────────────────────────────────────
+// ─ Event listeners
 document.getElementById("btn-solve").addEventListener("click", solve);
 
 document.getElementById("btn-clear").addEventListener("click", () => {
@@ -704,7 +704,7 @@ document.getElementById("btn-clear").addEventListener("click", () => {
   clearStatus();
 });
 
-// ── Visualizar rota ──────────────────────────────────────────────────────────
+// ─ Visualizar rota 
 function visualizeRoute(instanceName) {
   const result = benchmarkResults[instanceName];
   if (!result || !result.html_url) {
@@ -716,7 +716,7 @@ function visualizeRoute(instanceName) {
   window.open(result.html_url, `routes_${instanceName}`, "width=1200,height=800");
 }
 
-// ── Inicializar ────────────────────────────────────────────────────────────
+// ─ Inicializar 
 renderInstances();
 </script>
 
