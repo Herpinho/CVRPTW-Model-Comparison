@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmark Solomon — CVRPTW</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      color: #667eea;
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 20px;
+    }
+
+    .sidebar {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .section-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #667eea;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .instance-group {
+      margin-bottom: 25px;
+    }
+
+    .group-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #333;
+      background: #f0f4f8;
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+      cursor: pointer;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+      margin-right: 10px;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+    }
+
+    .checkbox-item label {
+      cursor: pointer;
+      flex: 1;
+      font-size: 0.9rem;
+      color: #444;
+    }
+
+    .checkbox-item label:hover {
+      color: #667eea;
+    }
+
+    .config-section {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .config-item {
+      margin-bottom: 15px;
+    }
+
+    .config-item label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .config-item input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-solve {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-solve:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-solve:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-clear {
+      background: #f0f4f8;
+      color: #667eea;
+      border: 1px solid #667eea;
+    }
+
+    .btn-clear:hover {
+      background: #e8ecf5;
+    }
+
+    .results-container {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .status-bar {
+      display: none;
+      padding: 15px;
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+      color: #2e7d32;
+    }
+
+    .status-bar.active {
+      display: block;
+    }
+
+    .status-bar.error {
+      background: #ffebee;
+      border-left-color: #f44336;
+      color: #c62828;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 30px;
+    }
+
+    .results-table thead {
+      background: #f5f7fa;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .results-table th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .results-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .results-table tbody tr:hover {
+      background: #f9fafc;
+    }
+
+    .gap-good { color: #2e7d32; font-weight: 600; }
+    .gap-ok   { color: #f57c00; font-weight: 600; }
+    .gap-bad  { color: #c62828; font-weight: 600; }
+
+    .status-optimal { background: #c8e6c9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+    .status-feasible { background: #ffe0b2; color: #e65100; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+    .status-timeout { background: #f8bbd0; color: #c2185b; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+
+    .chart-container {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f9fafc;
+      border-radius: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+    }
+
+    .empty-state-text {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    .empty-state-hint {
+      font-size: 0.9rem;
+      color: #bbb;
+    }
+
+    @media (max-width: 1000px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h1>🔬 Benchmark Solomon — CVRPTW</h1>
+      <p>Teste múltiplas instâncias e compare resultados com as referências</p>
+    </div>
+    <a href="/" style="background: #f0f4f8; color: #667eea; border: 1px solid #667eea; padding: 10px 20px; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.3s; white-space: nowrap;">← Voltar ao Menu</a>
+  </header>
+
+  <div class="main-content">
+    <!-- ── Sidebar ── -->
+    <div class="sidebar">
+      <div class="section-title">Seleção de Instâncias</div>
+
+      <!-- Classe C1 -->
+      <div class="instance-group">
+        <div class="group-label">📦 Classe C1 — Clusters + Janelas Apertadas</div>
+        <div id="group-c1"></div>
+      </div>
+
+      <!-- Classe C2 -->
+      <div class="instance-group">
+        <div class="group-label">📦 Classe C2 — Clusters + Janelas Largas</div>
+        <div id="group-c2"></div>
+      </div>
+
+      <!-- Classe R1 -->
+      <div class="instance-group">
+        <div class="group-label">🎲 Classe R1 — Aleatório + Janelas Apertadas</div>
+        <div id="group-r1"></div>
+      </div>
+
+      <!-- Classe R2 -->
+      <div class="instance-group">
+        <div class="group-label">🎲 Classe R2 — Aleatório + Janelas Largas</div>
+        <div id="group-r2"></div>
+      </div>
+
+      <!-- Classe RC1 -->
+      <div class="instance-group">
+        <div class="group-label">⚡ Classe RC1 — Misto + Janelas Apertadas</div>
+        <div id="group-rc1"></div>
+      </div>
+
+      <!-- Classe RC2 -->
+      <div class="instance-group">
+        <div class="group-label">⚡ Classe RC2 — Misto + Janelas Largas</div>
+        <div id="group-rc2"></div>
+      </div>
+
+      <!-- Configurações -->
+      <div class="config-section">
+        <div class="section-title">⚙️ Configuração</div>
+        
+        <div class="config-item">
+          <label for="time-limit">Tempo Limite (segundos):</label>
+          <input type="number" id="time-limit" value="300" min="10" max="3600">
+        </div>
+
+        <div class="button-group">
+          <button class="btn-solve" id="btn-solve">▶ Resolver</button>
+          <button class="btn-clear" id="btn-clear">✕ Limpar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Resultados ── -->
+    <div class="results-container">
+      <div class="status-bar" id="status-bar"></div>
+
+      <div id="empty-state" class="empty-state">
+        <div class="empty-state-icon">📊</div>
+        <div class="empty-state-text">Seleciona instâncias para começar</div>
+        <div class="empty-state-hint">Escolhe as instâncias à esquerda e clica "Resolver"</div>
+      </div>
+
+      <div id="results-wrapper" style="display: none;">
+        <table class="results-table" id="results-table">
+          <thead>
+            <tr>
+              <th>Instância</th>
+              <th>Estado</th>
+              <th>Distância</th>
+              <th>Gap Solomon</th>
+              
+              <th>Veículos</th>
+              <th>Tempo (s)</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="results-body">
+          </tbody>
+        </table>
+
+        <div class="chart-container">
+          <div style="text-align: center; margin-bottom: 8px;">
+            <button onclick="prevChart()" style="background: #667eea; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: bold; width: 28px; height: 28px; margin-right: 10px;">‹</button>
+            <span id="chart-indicator" style="color: #666; font-size: 12px; font-weight: 600;">Gráfico 1 de 2</span>
+            <button onclick="nextChart()" style="background: #667eea; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: bold; width: 28px; height: 28px; margin-left: 10px;">›</button>
+          </div>
+          <div id="chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Dados das instâncias Solomon 
+const INSTANCES = {
+  c1: [
+    { name: "C101", ref_dist: 828.94, ref_veh: 10 },
+    { name: "C102", ref_dist: 828.94, ref_veh: 10 },
+    { name: "C103", ref_dist: 828.06, ref_veh: 10 },
+    { name: "C104", ref_dist: 824.78, ref_veh: 10 },
+    { name: "C105", ref_dist: 828.94, ref_veh: 10 },
+  ],
+  c2: [
+    { name: "C201", ref_dist: 591.56, ref_veh: 3 },
+    { name: "C202", ref_dist: 591.56, ref_veh: 3 },
+    { name: "C203", ref_dist: 591.17, ref_veh: 3 },
+    { name: "C204", ref_dist: 590.60, ref_veh: 3 },
+    { name: "C205", ref_dist: 588.88, ref_veh: 3 },
+  ],
+  r1: [
+    { name: "R101", ref_dist: 1645.79, ref_veh: 19 },
+    { name: "R102", ref_dist: 1486.12, ref_veh: 17 },
+    { name: "R103", ref_dist: 1292.68, ref_veh: 13 },
+    { name: "R104", ref_dist: 1007.31, ref_veh: 9 },
+    { name: "R105", ref_dist: 1377.11, ref_veh: 14 },
+  ],
+  r2: [
+    { name: "R201", ref_dist: 1252.37, ref_veh: 4 },
+    { name: "R202", ref_dist: 1191.70, ref_veh: 3 },
+    { name: "R203", ref_dist: 939.50, ref_veh: 3 },
+    { name: "R204", ref_dist: 825.52, ref_veh: 2 },
+    { name: "R205", ref_dist: 994.42, ref_veh: 3 },
+  ],
+  rc1: [
+    { name: "RC101", ref_dist: 1696.94, ref_veh: 14 },
+    { name: "RC102", ref_dist: 1554.75, ref_veh: 12 },
+    { name: "RC103", ref_dist: 1261.67, ref_veh: 11 },
+    { name: "RC104", ref_dist: 1135.48, ref_veh: 10 },
+    { name: "RC105", ref_dist: 1629.44, ref_veh: 13 },
+  ],
+  rc2: [
+    { name: "RC201", ref_dist: 1406.91, ref_veh: 4 },
+    { name: "RC202", ref_dist: 1365.65, ref_veh: 3 },
+    { name: "RC203", ref_dist: 1049.62, ref_veh: 3 },
+    { name: "RC204", ref_dist: 798.46, ref_veh: 3 },
+    { name: "RC205", ref_dist: 1297.19, ref_veh: 4 },
+  ]
+};
+
+const GROUP_LABELS = {
+  c1: "group-c1",
+  c2: "group-c2",
+  r1: "group-r1",
+  r2: "group-r2",
+  rc1: "group-rc1",
+  rc2: "group-rc2"
+};
+
+// Renderizar checkboxes
+// Referências Solomon (para gráficos) 
+const SOLOMON_REFERENCE = {
+  "C101": [10, 828.94], "C102": [10, 828.94], "C103": [10, 828.94], "C104": [10, 828.94], "C105": [10, 828.94],
+  "C201": [3, 591.56], "C202": [3, 591.56], "C203": [3, 591.56], "C204": [3, 591.56], "C205": [3, 591.56],
+  "R101": [19, 1650.80], "R102": [17, 1486.12], "R103": [13, 1292.68], "R104": [9, 1124.70], "R105": [14, 1377.11],
+  "R201": [4, 1143.28], "R202": [3, 1029.04], "R203": [3, 939.54], "R204": [2, 825.52], "R205": [3, 994.42],
+  "RC101": [14, 1696.94], "RC102": [12, 1554.75], "RC103": [11, 1258.73], "RC104": [10, 1132.29], "RC105": [13, 1513.71],
+  "RC201": [4, 1406.91], "RC202": [3, 1365.64], "RC203": [3, 1280.45], "RC204": [3, 1121.05], "RC205": [4, 1629.44]
+};
+
+function renderInstances() {
+  for (const [groupKey, instances] of Object.entries(INSTANCES)) {
+    const container = document.getElementById(GROUP_LABELS[groupKey]);
+    instances.forEach(inst => {
+      const div = document.createElement("div");
+      div.className = "checkbox-item";
+      div.innerHTML = `
+        <input type="checkbox" id="inst-${inst.name}" value="${inst.name}">
+        <label for="inst-${inst.name}">${inst.name}</label>
+      `;
+      container.appendChild(div);
+    });
+  }
+}
+
+
+function getSelectedInstances() {
+  const checkboxes = document.querySelectorAll("input[type='checkbox']:checked");
+  return Array.from(checkboxes).map(cb => cb.value);
+}
+
+
+function showStatus(message, isError = false) {
+  const bar = document.getElementById("status-bar");
+  bar.textContent = message;
+  bar.classList.add("active");
+  if (isError) bar.classList.add("error");
+  else bar.classList.remove("error");
+}
+
+function clearStatus() {
+  const bar = document.getElementById("status-bar");
+  bar.classList.remove("active", "error");
+}
+
+// Resolver 
+async function solve() {
+  const selected = getSelectedInstances();
+  if (selected.length === 0) {
+    showStatus("❌ Seleciona pelo menos uma instância", true);
+    return;
+  }
+
+  const timeLimit = parseInt(document.getElementById("time-limit").value);
+  const btn = document.getElementById("btn-solve");
+  btn.disabled = true;
+
+  showStatus(`⏳ A resolver ${selected.length} instância(s)...`);
+
+  try {
+    const response = await fetch("/api/benchmark", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instances: selected,
+        time_limit: timeLimit
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    displayResults(data);
+    clearStatus();
+    showStatus("✓ Resolução concluída!");
+
+  } catch (error) {
+    console.error(error);
+    showStatus(`❌ Erro: ${error.message}`, true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Mostrar resultados 
+let benchmarkResults = {};  // Guarda os resultados para visualização
+
+function displayResults(results) {
+  console.log("=== DISPLAY RESULTS ===");
+  console.log("Total resultados:", results.length);
+  console.log("Todos os resultados:", results);
+  
+  // Filtrar resultados válidos (sem erros)
+  const validResults = results.filter(r => !r.error && r.distance !== undefined);
+  const errorResults = results.filter(r => r.error);
+
+  console.log("Válidos:", validResults.length, validResults);
+  console.log("Com erro:", errorResults.length, errorResults);
+
+  // Guardar os resultados globais (apenas válidos)
+  benchmarkResults = {};
+  validResults.forEach(r => {
+    benchmarkResults[r.instance] = r;
+  });
+
+  
+  if (errorResults.length > 0) {
+    const errorMsg = errorResults.map(e => `${e.instance}: ${e.error}`).join(" | ");
+    showStatus(`⚠️ Alguns erros: ${errorMsg}`, true);
+  }
+
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("results-wrapper").style.display = "block";
+
+  const tbody = document.getElementById("results-body");
+  tbody.innerHTML = "";
+
+  validResults.forEach(r => {
+    const row = document.createElement("tr");
+    
+    const gapClass = r.gap_solomon <= 0.01 ? "gap-good" : 
+                     r.gap_solomon < 5 ? "gap-ok" : "gap-bad";
+    
+    const statusClass = r.status === "optimal" ? "status-optimal" : 
+                        r.status === "feasible" ? "status-feasible" : "status-timeout";
+    
+    const visualizeBtn = r.status !== "infeasible" ? 
+      `<button onclick="visualizeRoute('${r.instance}')" style="background: #667eea; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">Ver Rota</button>` :
+      `<span style="color: #ccc; font-size: 0.85rem;">N/A</span>`;
+    
+    row.innerHTML = `
+      <td><strong>${r.instance}</strong></td>
+      <td><span class="${statusClass}">${r.status}</span></td>
+      <td>${r.distance.toFixed(2)} km</td>
+      <td><span class="${gapClass}">${r.gap_solomon >= 0 ? '+' : ''}${r.gap_solomon.toFixed(2)}%</span></td>
+      <td>${r.num_vehicles}</td>
+      <td>${r.runtime.toFixed(1)}s</td>
+      <td>${visualizeBtn}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // Gráfico de convergência (apenas com os resultados válidos)
+  const instances = validResults.map(r => r.instance);
+  const distances = validResults.map(r => r.distance);
+  const references = validResults.map(r => r.ref_distance);
+  const gaps = validResults.map(r => r.gap_solomon);
+  const vehicles = validResults.map(r => r.num_vehicles);
+
+  // Guardar os dados dos gráficos globalmente
+  window.chartData = {
+    instances, 
+    distances, 
+    references, 
+    gaps, 
+    vehicles, 
+    validResults
+  };
+  window.currentChart = 0;
+
+  // Desenhar primeiro gráfico
+  drawChart(0);
+}
+
+
+function drawChart(index) {
+  window.currentChart = index;
+  const { instances, distances, references, gaps, vehicles } = window.chartData;
+
+  // Atualizar indicador
+  document.getElementById("chart-indicator").textContent = `Gráfico ${index + 1} de 2`;
+
+  if (index === 0) {
+    
+    const trace1 = {
+      x: instances,
+      y: distances,
+      name: "Obtida",
+      type: "bar",
+      marker: { color: "#667eea" }
+    };
+
+    const trace2 = {
+      x: instances,
+      y: references,
+      name: "Referência Solomon",
+      type: "bar",
+      marker: { color: "#ccc" }
+    };
+
+    const layout = {
+      title: "Comparação de Distâncias — Benchmark Solomon",
+      xaxis: { title: "Instância" },
+      yaxis: { title: "Distância (km)" },
+      barmode: "group",
+      hovermode: "x unified",
+      plot_bgcolor: "#f9fafc",
+      paper_bgcolor: "white",
+      font: { family: "Segoe UI, Arial" }
+    };
+
+    Plotly.newPlot("chart", [trace1, trace2], layout, { responsive: true });
+
+  } else if (index === 1) {
+    // Gráfico 2: Número de Veículos
+    const vehiclesRef = instances.map(inst => SOLOMON_REFERENCE[inst.toUpperCase()]?.[0] || 0);
+    
+    const vehiclesTrace = {
+      x: instances,
+      y: vehicles,
+      name: "Obtida",
+      type: "bar",
+      marker: { color: "#667eea" }
+    };
+
+    const refTrace = {
+      x: instances,
+      y: vehiclesRef,
+      name: "Referência Solomon",
+      type: "bar",
+      marker: { color: "#ccc" }
+    };
+
+    const layout = {
+      title: "Número de Veículos — Otimização de Frotas",
+      xaxis: { title: "Instância" },
+      yaxis: { title: "Veículos" },
+      barmode: "group",
+      hovermode: "x unified",
+      plot_bgcolor: "#f9fafc",
+      paper_bgcolor: "white",
+      font: { family: "Segoe UI, Arial" }
+    };
+
+    Plotly.newPlot("chart", [vehiclesTrace, refTrace], layout, { responsive: true });
+  }
+}
+
+function nextChart() {
+  const next = (window.currentChart + 1) % 2;
+  drawChart(next);
+}
+
+function prevChart() {
+  const prev = (window.currentChart - 1 + 2) % 2;
+  drawChart(prev);
+}
+
+// Event listeners 
+document.getElementById("btn-solve").addEventListener("click", solve);
+
+document.getElementById("btn-clear").addEventListener("click", () => {
+  document.querySelectorAll("input[type='checkbox']").forEach(cb => cb.checked = false);
+  document.getElementById("empty-state").style.display = "block";
+  document.getElementById("results-wrapper").style.display = "none";
+  clearStatus();
+});
+
+//  Visualizar rota 
+function visualizeRoute(instanceName) {
+  const result = benchmarkResults[instanceName];
+  if (!result || !result.html_url) {
+    alert("HTML da rota não encontrado. Tenta resolver novamente.");
+    return;
+  }
+  
+  
+  window.open(result.html_url, `routes_${instanceName}`, "width=1200,height=800");
+}
+
+
+renderInstances();
+</script>
+
+</body>
+</html>
