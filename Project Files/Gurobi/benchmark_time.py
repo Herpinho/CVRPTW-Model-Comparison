@@ -1,11 +1,5 @@
 """
-Benchmark de convergência por tempo limite — CVRPTW
-Laboratório de Projeto 2025/2026 — UAL
-
-Corre uma ou mais instâncias Solomon com limites de tempo de 5 em 5 minutos
-até aos 30 minutos e produz uma tabela comparativa.
-
-Uso:
+Usar:
     python benchmark_time.py solomon/R201.txt
     python benchmark_time.py solomon/R201.txt solomon/RC201.txt solomon/R101.txt
 """
@@ -15,7 +9,7 @@ import time
 import importlib.util
 import os
 
-# ── Carregar solver.py ────────────────────────────────────────────────────────
+# Carregar solver.py 
 def load_solver():
     for name in ("solver.py", "MTZ.py", "BigM.py"):
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), name)
@@ -32,7 +26,7 @@ load_solomon      = solver.load_solomon
 solve_cvrptw      = solver.solve_cvrptw
 SOLOMON_REFERENCE = solver.SOLOMON_REFERENCE
 
-# ── Configuração ──────────────────────────────────────────────────────────────
+# Configuração 
 TIME_LIMITS = [
     300,    # 5 min
     600,    # 10 min
@@ -43,11 +37,11 @@ TIME_LIMITS = [
     7200,   # 2 horas
     10800,  # 3 horas
     21600,  # 6 horas
-    43200,  # 12 horas (overnight)
+    43200,  # 12 horas 
 ]
 MIP_GAP = 0.001  # gap muito baixo para não parar cedo
 
-# ── Correr benchmark para uma instância ──────────────────────────────────────
+# Correr benchmark para uma instância 
 def benchmark_instance(filepath: str):
     instance = load_solomon(filepath)
     ref       = SOLOMON_REFERENCE.get(instance.name.upper())
@@ -106,7 +100,7 @@ def benchmark_instance(filepath: str):
             sol_gap_str = "N/A"
 
         # Marcar se atingiu ótimo antes do tempo
-        status_mark = " ✓" if result["status"] == 2 else ""  # 2 = GRB.OPTIMAL
+        status_mark = " ✓" if result["status"] == 2 else ""  
 
         # Formatar tempo real de execução
         if runtime < 3600:
@@ -129,12 +123,12 @@ def benchmark_instance(filepath: str):
             "optimal":    result["status"] == 2,
         })
 
-        # Se chegou ao ótimo, não vale a pena continuar
+        # Se chegou ao ótimo, não continuar
         if result["status"] == 2:
             print(f"\n  ✓ Ótimo global encontrado aos {label}! A parar benchmark.")
             break
 
-    # ── Resumo final ──────────────────────────────────────────────────────────
+    # Resumo final 
     valid = [r for r in results if r is not None]
     if len(valid) >= 2:
         first = valid[0]
@@ -159,7 +153,7 @@ def benchmark_instance(filepath: str):
     return results
 
 
-# ── Ponto de entrada ──────────────────────────────────────────────────────────
+# Ponto de entrada
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Uso: python benchmark_time.py <instancia> [<instancia2> ...]")
