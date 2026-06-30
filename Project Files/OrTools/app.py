@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 
-# ── Carregar solver.py ────────────────────────────────────────────────────────
+#Carregar solver.py 
 _path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "solver.py")
 _spec = importlib.util.spec_from_file_location("cvrptw_solver", _path)
 _mod  = importlib.util.module_from_spec(_spec)
