@@ -6,7 +6,8 @@ Usar:
 import sys
 import json
 import math
-from BigM import load_solomon, solve_cvrptw
+from solver import load_solomon, solve_cvrptw, SOLOMON_REFERENCE
+
 
 # Paleta de cores para as rotas 
 COLORS = [
